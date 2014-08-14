@@ -1,0 +1,13 @@
+
+jeudi 14 août 2014, 18:06:21 (UTC+0200)
+
+c'est un debut
+mais il faut revoir le calcul de l'etape
+et inserer des etapes vides
+
+Etape 0 = RAZ
+Etape 1 = Dossier
+Etape 2 = operation
+Etape 3 = Bobines (facultative)
+Etape 4 = Validation
+Etape 5 = Retour a 0
