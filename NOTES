@@ -1,0 +1,12 @@
+vendredi 15 août 2014, 10:40:21 (UTC+0200)
+
+Notes machine a etat:
+
+ETIQUETTE   | No Ordre  | prompt | TEST   | ACTION
+
+DEBUT       | 0         |        |        |
+INIT        | 1         |        |        | raz()
+DOSSIER     | 2         | Dossier|        | verif_dossier
+OPERATION   | 3         | Oper   |        | verif_oper
+BOBINE      | 3         | Bobine | sai_bob| verif_bobine
+MAJ         | 4         |        |        | miseèa_jour()

@@ -7,6 +7,13 @@
 
 import pudb
 
+ETAPE_INIT		= 0
+ETAPE_DOSSIER	= 1
+ETAPE_OPERATION	= 2
+ETAPE_BOBINE	= 3
+ETAPE_MAJ 		= 4
+ETAPE_MAX		= 5
+
 class POSTE(object):
 	def __init__(self):
 		self.pid = 0					#Id Unique
@@ -53,7 +60,7 @@ class POSTE(object):
 		self.etape = 0
 
 	def mise_a_jour(self):
-		pass
+		return "MISE A JOUR OK"
 
 	def calc_prompt(self, NL=True):
 		if self.etape == 0:
@@ -86,46 +93,51 @@ class POSTE(object):
 		self.next_etape()
 		return 'OK'
 
+	## -------------------------------------------------
+	## Determine comment on passe d'une etape a l'autre
+	## -------------------------------------------------
 	def next_etape(self):
 		## Calcule de l'étape
 		if self.dossier == 0:
-			self.etape = 0
+			self.etape = ETAPE_DOSSIER
 			return
 		else:
 			if self.oper == "":
-				self.etape = 1
+				self.etape = ETAPE_OPERATION
 				return
 
 		## Si j'ai une operation et que je dois 
 		## saisir une bobine
 		if self.oper and self.BOBINE_SAISIE:
-			self.etape = 2
+			self.etape = ETAPE_BOBINE
 			return
-
-		## Sinon c'est fini
-		self.mise_a_jour()
-		self.raz()
+		else:
+			self.ETAPE = ETAPE_MAJ
 
 
 	def scenario(self, cmd):
-		pudb.set_trace()
 		MSG = ''
 		## calcule de l'etape
 		self.next_etape()
 		## Gestion
-		if self.etape == 0:
+		if self.etape == ETAPE_INIT:
+			self.raz()
+		elif self.etape == ETAPE_DOSSIER:
 			## On verifie le dossier
 			MSG = self.verif_dossier(cmd)
-		elif self.etape == 1:
+		elif self.etape == ETAPE_OPERATION:
 			## On verifie l'operation
 			MSG = self.verif_oper(cmd)
-		elif self.etape == 2:
+		elif self.etape == ETAPE_BOBINE:
 			if self.BOBINE_SAISIE:
 				## Si besoin saisie de la bobine
 				MSG = self.verif_bobine(cmd)
+		elif self.etape == ETAPE_MAJ:
+			MSG = self.mise_a_jour()
+			self.etape = ETAPE_INIT
 		else:
-			MSG = 'ERREUR ETAPE : %s ' % cmd
-		self.pr()
+			MSG = 'ERREUR ETAPE INCONNUE : %s ' % cmd
+		rself.pr()
 		return MSG
 
 	def pr(self):
@@ -137,6 +149,9 @@ def cli_log(msg):
 
 def srv_log(msg):
 	print "SRV: %s " % msg
+
+
+## ===================================================================================================
 
 ## ------------------------
 ## recup de la commande
