@@ -40,20 +40,29 @@
 ##			CALL MAJ
 ##			GOTO DEBUT
 
+import datetime
 import pdb
 
 class Operande(object):
-	def __init__(self, name):
+	def __init__(self, name=''):
 		self.name = name
 		self.no = 0
 		self.param1 = ''
 		self.param2 = ''
+		self.ok = False
 
 	def __str__(self):
-		return 'OP:%s %0d %s %s' % \
-			( self.no, self.name, self.param1, self.param2)
-ERR = 1
-ERR_OPER_INEXISTANTE = ERR
+		return '%03d : OP:%-10.10s : %-5.5s : %s %s' % \
+			( self.no, self.name, self.ok, self.param1, self.param2)
+WARN = 100
+WARN_WAITING_DATA = WARN
+WARN += 1
+WARN_END_OF_PROG = WARN
+WARN += 1
+WARN_PRINTING = WARN
+
+ERR = 1000
+ERR_OP_INEXISTANTE = ERR
 ERR += 1
 ERR_PARAM_INEXISTANTE = ERR
 ERR += 1
@@ -61,16 +70,29 @@ ERR_ETIQ_INEXISTANTE = ERR
 ERR += 1
 ERR_NO_PROG = ERR
 ERR += 1
+ERR_PARAM_OBLIGATOIRE = ERR
+ERR += 1
+ERR_PARAM_INCORRECT = ERR
+
+STOPPED  = 1
+RUNNING  = 2
+WAITING  = 3
+PRINTING = 4
 
 class Machine(object):
+
 
 	def __init__(self, name):
 		self.name = name
 		self.registres = {}
 		self.status = False
+		self.etat = STOPPED
 		self.variables = {}
 		self.constantes = {}
 		self.erreur = 0
+
+		self.data_out = None
+		self.data_in = None
 
 		self.cursor = 0
 		self.prog = []
@@ -83,7 +105,7 @@ class Machine(object):
 			'JMP_FALSE', 'JMP_TRUE', 'GOTO'
 			'CONSTANTE', 'VAR', 'VARIABLE', 'REGISTRE', 
 			'PRINT', 'RAZ',
-			'STATUS', 'TEST'
+			'STATUS', 'TEST', 'INIT'
 		]
 
 	def __str__(self):
@@ -103,11 +125,23 @@ class Machine(object):
 		for k,v in self.constantes.items():
 			R += 'CONST %s = %s\n' % (k,v)
 		R += '\n'
+		R += 'Etiquette(s) : \n'
+		for k,v in self.etiq.items():
+			R += 'ETIQ %s = %s\n' % (k,v)
+		R += '\n'
 		return R
 
-	def mach_init(self):
+	def raz_registre(self):
 		for x in range(0,9):
 			self.registres['REG%0d' % x] = ''
+
+	def raz_status(self):
+		self.status = False
+		self.erreur = 0
+		self.errlig = 0
+
+	def mach_init(self):
+		self.raz_registre()
 		self.variables = {}
 		self.status = False
 		self.erreur = 0
@@ -117,8 +151,9 @@ class Machine(object):
 
 	def check_prog(self):
 		## Numerotation + recup des etiquettes
+		n = 0
 		for op in self.prog:
-			n =+ 1
+			n += 1
 			op.no = n
 			if op.name in ('$', 'ETIQ'):
 				self.etiq[op.param1] = op.no
@@ -128,24 +163,38 @@ class Machine(object):
 			self.check_line(op)
 
 	def check_line(self, op):
+		op.ok = True
 		if op.name not in self.OPERANDE:
-			self.erreur = ERR_OPER_INCONNU
+			self.erreur = ERR_OP_INEXISTANTE
+			self.errlig = op.no
 		else:
 			if op.name == 'INIT':
 				pass
 			elif op.name in ('$', 'ETIQ'):
 				if not op.param1:
-					self.erreur = ERR_ETIQ_INEXISTANTE
+					self.erreur = ERR_PARAM_OBLIGATOIRE
+					self.ok = False
 			elif op.name == 'CALL':
 				pass
 			elif op.name in ('GOTO', 'JMP_FALSE', 'JMP_TRUE'):
+				if not op.param1:
+					self.erreur = ERR_PARAM_OBLIGATOIRE
+					self.ok = False
 				if op.param1 not in self.etiq.keys():
 					self.erreur = ERR_ETIQ_INEXISTANTE
+					self.ok = False
 			elif op.name == 'PRINT':
-				pass	
+				if not op.param1:
+					self.erreur = ERR_PARAM_OBLIGATOIRE
+					self.ok = False
 			elif op.name == 'RAZ':
-				pass
+				if not op.param1:
+					self.erreur = ERR_PARAM_OBLIGATOIRE
+					self.ok = False
 
+	def liste_prog(self):
+		for l in self.prog:
+			print l
 
 	def inc_cursor(self):
 		n = self.cursor
@@ -161,35 +210,48 @@ class Machine(object):
 		self.cursor = n
 		if n > 0 and n < len(self.prog):
 			self.cursor = n
+		else:
+			self.etat = STOPPED
+			self.erreur = WARN_END_OF_PROG
+			self.errlig = 0
 
 	def execute(self):
 		if self.prog:
-			op = self.prog[self.cursor]
+			op = self.prog[self.cursor-1]
+			print "Executing : %s " % op
 
-			if op.name in ('INIT', 'READ'):
-				if op.name == 'INIT':
-					self.init()
-
-				if op.param1:
-					## on stocke l'etique + no ligne
+			if op.name == 'INIT':
+				pass
+			elif op.name in ('$', 'ETIQ'):
+				pass
+			elif op.name == 'RAZ':
+				if op.param1 == 'VAR':
 					pass
+				elif op.param1 == 'STATUS':
+					self.raz_status()
+				elif op.param1 == 'REGISTRE':
+					self.raz_registre()
 				else:
-					self.erreur = ERR_PARAM_INEXISTANT
-			elif op == 'CALL':
+					self.etat = STOPPED
+					self.erreur = ERR_PARAM_INCORRECT
+					self.errlig = op.no
+					op.ok = False
+			elif op.name == 'PRINT':
+				self.etat = PRINTING
+				self.erreur = ERR_PARAM_INCORRECT
+				self.errlig = op.no
+				self.data_out = op.param1
+			elif op.name == 'CALL':
 				if op.param1:
 					## On change le cursor
 					pass
 				else:
 					self.erreur = ERR_PARAM_INEXISTANT
-			elif op == 'GOTO':
+			elif op.name == 'GOTO':
 					pass
-			elif op == 'JMP_FALSE':
+			elif op.name == 'JMP_FALSE':
 					pass
-			elif op == 'PRINT':
-					pass
-			elif op == 'RAZ':
-					pass
-			elif op == 'TEST':
+			elif op.name == 'TEST':
 					pass
 			else:
 				self.erreur = ERR_OP_INEXISTANTE
@@ -197,18 +259,82 @@ class Machine(object):
 			self.erreur = ERR_NO_PROG
 
 	def tick(self, data = None):
+		#pdb.set_trace()
 		if data:
 			pass
 			## que faire des données
-		self.inc_cursor()
-		self.execute()
+		while not self.erreur:
+			self.inc_cursor()
+			self.etat = RUNNING
+			self.execute()
+			if self.erreur and self.etat == RUNNING:
+				print "Erreur %s %s" % (self.erreur, self.errlig)
+			if self.etat == PRINTING:
+				print ">%s" % self.data_out
+
+def set_prog(p):
+	l = Operande()
+	l.name = 'INIT'
+	p.append(l)
+	l = Operande()
+	l.name = '$'
+	l.param1 = "DEBUT"
+	p.append(l)
+	l = Operande()
+	l.name = 'RAZ'
+	l.param1 = "VAR"
+	p.append(l)
+	l = Operande()
+	l.name = 'RAZ'
+	l.param1 = "STATUS"
+	p.append(l)
+	l = Operande()
+	l.name = 'RAZ'
+	l.param1 = "REGISTRE"
+	p.append(l)
+
+	l = Operande()
+	l.name = '$'
+	l.param1 = "DOSSIER"
+	p.append(l)
+	l = Operande()
+	l.name = 'PRINT'
+	l.param1 = "Dossier : "
+	p.append(l)
+
+def set_prog_fic(ficname, p):
+	with open(ficname) as f:
+		ll = f.readlines()
+		for l in ll:
+			if l.startswith('#'):
+				next
+			i = l.split()
+			op = Operande()
+			op.name = i[0]
+			if len(i) >= 2:
+				op.param1 = i[1]
+			if len(i) == 3:
+				op.param1 = i[2]
+			p.append(op)
+	
+def log(msg=''):
+	now = datetime.datetime.now().time()
+	print '%s : %s' % (now,msg)
 
 def test():
+	log('Debut')
 	M = Machine('TEST')
+	log('Set Prog')
+	#set_prog(M.prog)
+	set_prog_fic('TEST1.txt', M.prog)
+	M.liste_prog()
+	log('Init')
 	M.mach_init()
-	#pdb.set_trace()
+	#print M
+	log('Tick')
 	M.tick()
-	print M
+	#print M
+	log('Fin')
 
 if __name__ == '__main__':
 	test()
