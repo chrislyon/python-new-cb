@@ -19,14 +19,30 @@ class Err(Exception):
 	def __str__(self):
 		return "%s : %s " % (self.nolig, self.raison)
 
-class Printing(Err):
-	pass
+class Printing(Exception):
+	def __init__(self, raison="<vide>", nolig=0):
+		self.raison = raison
+		self.nolig = nolig
 
-class Waiting(Err):
-	pass
+	def __str__(self):
+		return "%s : %s " % (self.nolig, self.raison)
 
-class EndOfProg(Err):
-	pass
+class Waiting(Exception):
+	def __init__(self, raison="<vide>", nolig=0):
+		self.raison = raison
+		self.nolig = nolig
+
+	def __str__(self):
+		return "%s : %s " % (self.nolig, self.raison)
+
+class EndOfProg(Exception):
+	def __init__(self, raison="<vide>", nolig=0):
+		self.raison = raison
+		self.nolig = nolig
+
+	def __str__(self):
+		return "%s : %s " % (self.nolig, self.raison)
+
 
 class Operande(object):
 	def __init__(self, name=''):
@@ -50,6 +66,7 @@ WAITING  = ETAT
 ETAT += 1
 PRINTING = ETAT
 ETAT += 1
+FINISHED = ETAT
 
 class Machine(object):
 
@@ -163,6 +180,8 @@ class Machine(object):
 			elif op.name == 'RAZ':
 				if not op.param1:
 					raise Err("Parametre obligatoire", op.no)
+		##
+		op.ok = True
 
 	def liste_prog(self):
 		for l in self.prog:
@@ -194,7 +213,12 @@ class Machine(object):
 			if op.name == 'INIT':
 				pass
 			elif op.name == 'READ':
-				pass
+				if self.data_in:
+					self.registre[op.param1] = self.data_in
+					self.data_in = None
+				else:
+					self.etat = WAITING
+					raise Waiting("READ",op.no)
 			elif op.name in ('$', 'ETIQ'):
 				pass
 			elif op.name == 'RAZ':
@@ -211,7 +235,7 @@ class Machine(object):
 			elif op.name == 'PRINT':
 				self.etat = PRINTING
 				self.data_out = op.param1
-				raise Printing("", op.no)
+				raise Printing("PRINT", op.no)
 			elif op.name == 'CALL':
 				if op.param1:
 					## On change le cursor
@@ -230,19 +254,24 @@ class Machine(object):
 			raise EndOfProg()
 
 	def tick(self, data=None):
-		if data:
-			self.data_in = data
 		EXIT = False
 		while not EXIT:
-			self.inc_cursor()
+			if not data:
+				self.inc_cursor()
+			else:
+				self.data_in = data
+			## On continue
 			self.etat = RUNNING
 			try:
 				self.execute()
 			except Printing:
+				self.etat = PRINTING
 				EXIT = True
 			except Waiting:
+				self.etat = WAITING
 				EXIT = True
-			except Waiting:
+			except EndOfProg:
+				self.ETAT = STOPPED
 				EXIT = True
 			except:
 				print("Erreur :")
@@ -250,21 +279,6 @@ class Machine(object):
 				traceback.print_exc(file=sys.stdout)
 				print("-"*60)
 				EXIT = True
-
-	def old_tick(self, data = None):
-		#pdb.set_trace()
-		if data:
-			pass
-			## que faire des données
-		while not self.erreur:
-			self.inc_cursor()
-			self.etat = RUNNING
-			self.execute()
-			if self.erreur and self.etat == RUNNING:
-				print "Erreur %s %s" % (self.erreur, self.errlig)
-				print "> %s " % self.prog[self.errlig]
-			if self.etat == PRINTING:
-				print ">%s" % self.data_out
 
 ## ------------------------
 ## Chargement d'un prog
@@ -309,17 +323,16 @@ def test():
 	log('Boucle principale : ')
 	EXIT = False
 	while not EXIT:
-		try:
-			M.tick()
-		except Waiting:
+		M.tick()
+		if M.etat == WAITING:
 			print "WAITING"
-			EXIT = True
-		except Printing:
+			r = raw_input('>')
+			M.tick(r)
+		elif M.etat == PRINTING:
 			print "[%s]" % M.data_out
+		elif M.etat == FINISHED:
 			EXIT = True
-		except EndOfProg:
-			EXIT = True
-		except:
+		else:
 			M.liste_prog()
 			print M
 			
