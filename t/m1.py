@@ -41,6 +41,7 @@
 ##			GOTO DEBUT
 
 import datetime
+import shlex
 import pdb
 
 class Operande(object):
@@ -74,13 +75,19 @@ ERR_PARAM_OBLIGATOIRE = ERR
 ERR += 1
 ERR_PARAM_INCORRECT = ERR
 
-STOPPED  = 1
-RUNNING  = 2
-WAITING  = 3
-PRINTING = 4
+ETAT = 1
+STOPPED  = ETAT
+ETAT += 1
+CHECKING  = ETAT
+ETAT += 1
+RUNNING  = ETAT
+ETAT += 1
+WAITING  = ETAT
+ETAT += 1
+PRINTING = ETAT
+ETAT += 1
 
 class Machine(object):
-
 
 	def __init__(self, name):
 		self.name = name
@@ -90,6 +97,7 @@ class Machine(object):
 		self.variables = {}
 		self.constantes = {}
 		self.erreur = 0
+		self.errlig = 0
 
 		self.data_out = None
 		self.data_in = None
@@ -102,14 +110,15 @@ class Machine(object):
 		self.OPERANDE = [
 			'$', 'ETIQ',
 			'CALL',
-			'JMP_FALSE', 'JMP_TRUE', 'GOTO'
+			'JMP_FALSE', 'JMP_TRUE', 'GOTO',
 			'CONSTANTE', 'VAR', 'VARIABLE', 'REGISTRE', 
 			'PRINT', 'RAZ',
+			'READ',
 			'STATUS', 'TEST', 'INIT'
 		]
 
 	def __str__(self):
-		R = 'MACH:%s status=%s erreur=%s' % (self.name, self.status, self.erreur)
+		R = 'MACH:%s status=%s erreur=%s errlig=%s' % (self.name, self.status, self.erreur, self.errlig)
 		R += '\n'
 		R += 'Registres    : \n'
 		r = self.registres.items()
@@ -150,6 +159,7 @@ class Machine(object):
 		self.check_prog()
 
 	def check_prog(self):
+		self.etat = CHECKING
 		## Numerotation + recup des etiquettes
 		n = 0
 		for op in self.prog:
@@ -160,7 +170,11 @@ class Machine(object):
 
 		## Verification syntaxe
 		for op in self.prog:
+			#if op.name == 'GOTO':
+			#	pdb.set_trace()
 			self.check_line(op)
+			if self.erreur:
+				print "SYNTAXE ERREUR %s %s" % (self.erreur, self.errlig)
 
 	def check_line(self, op):
 		op.ok = True
@@ -169,6 +183,8 @@ class Machine(object):
 			self.errlig = op.no
 		else:
 			if op.name == 'INIT':
+				pass
+			elif op.name == 'READ':
 				pass
 			elif op.name in ('$', 'ETIQ'):
 				if not op.param1:
@@ -222,6 +238,8 @@ class Machine(object):
 
 			if op.name == 'INIT':
 				pass
+			elif op.name == 'READ':
+				pass
 			elif op.name in ('$', 'ETIQ'):
 				pass
 			elif op.name == 'RAZ':
@@ -269,46 +287,22 @@ class Machine(object):
 			self.execute()
 			if self.erreur and self.etat == RUNNING:
 				print "Erreur %s %s" % (self.erreur, self.errlig)
+				print "> %s " % self.prog[self.errlig]
 			if self.etat == PRINTING:
 				print ">%s" % self.data_out
 
-def set_prog(p):
-	l = Operande()
-	l.name = 'INIT'
-	p.append(l)
-	l = Operande()
-	l.name = '$'
-	l.param1 = "DEBUT"
-	p.append(l)
-	l = Operande()
-	l.name = 'RAZ'
-	l.param1 = "VAR"
-	p.append(l)
-	l = Operande()
-	l.name = 'RAZ'
-	l.param1 = "STATUS"
-	p.append(l)
-	l = Operande()
-	l.name = 'RAZ'
-	l.param1 = "REGISTRE"
-	p.append(l)
-
-	l = Operande()
-	l.name = '$'
-	l.param1 = "DOSSIER"
-	p.append(l)
-	l = Operande()
-	l.name = 'PRINT'
-	l.param1 = "Dossier : "
-	p.append(l)
-
+## ------------------------
+## Chargement d'un prog
+## a partir d'un fichier
+## ------------------------
 def set_prog_fic(ficname, p):
 	with open(ficname) as f:
 		ll = f.readlines()
 		for l in ll:
 			if l.startswith('#'):
 				next
-			i = l.split()
+			l = l.strip()
+			i = shlex.split(l)
 			op = Operande()
 			op.name = i[0]
 			if len(i) >= 2:
@@ -317,23 +311,33 @@ def set_prog_fic(ficname, p):
 				op.param1 = i[2]
 			p.append(op)
 	
+## ------------------------
+## Petite routine de log
+## ------------------------
 def log(msg=''):
 	now = datetime.datetime.now().time()
 	print '%s : %s' % (now,msg)
 
+## --------
+## TEST
+## --------
 def test():
 	log('Debut')
 	M = Machine('TEST')
 	log('Set Prog')
 	#set_prog(M.prog)
 	set_prog_fic('TEST1.txt', M.prog)
-	M.liste_prog()
 	log('Init')
 	M.mach_init()
-	#print M
-	log('Tick')
-	M.tick()
-	#print M
+	if M.erreur:
+		M.liste_prog()
+	log('Boucle principale : ')
+	for x in range(0,9):
+		M.tick()
+		if M.erreur:
+			M.liste_prog()
+			print M
+			
 	log('Fin')
 
 if __name__ == '__main__':
