@@ -1,48 +1,32 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-##
-##
-##
+## ---------------------------
+## MACHINEVIRTUELLE en PYTHON
+## ---------------------------
 
-# Operande
-
-## Registre
-## REGISTRE	0-9
-## STATUS	True/False
-## VARIABLE
-## CONSTANTE
-
-## 			INIT
-## $DEBUT
-## 			RAZ VAR
-##			RAZ STATUS
-##			RAZ REGISTRE
-## $DOSSIER
-##			PRINT "DOSSIER"
-##			READ 
-##			CALL VERIF_DOSSIER
-##			JMP_FALSE $DOSSIER
-## $OPERATION
-##			PRINT "OPERATION"
-##			READ
-##			CALL VERIF_OPER
-##			JMP_FALSE $OPERATION
-## 
-##			TEST CONSTANTE SAISIE_BOBINE
-##			JMP_FALSE SUITE
-## $BOBINE
-##			PRINT "BOBINE"
-##			READ
-##			CALL VERIF_BOBINE
-##			JMP_FALSE $BOBINE
-## $SUITE
-##			CALL MAJ
-##			GOTO DEBUT
-
+import sys, traceback
 import datetime
 import shlex
 import pdb
+
+
+class Err(Exception):
+	def __init__(self, raison="<vide>", nolig=0):
+		self.raison = raison
+		self.nolig = nolig
+
+	def __str__(self):
+		return "%s : %s " % (self.nolig, self.raison)
+
+class Printing(Err):
+	pass
+
+class Waiting(Err):
+	pass
+
+class EndOfProg(Err):
+	pass
 
 class Operande(object):
 	def __init__(self, name=''):
@@ -55,26 +39,6 @@ class Operande(object):
 	def __str__(self):
 		return '%03d : OP:%-10.10s : %-5.5s : %s %s' % \
 			( self.no, self.name, self.ok, self.param1, self.param2)
-WARN = 100
-WARN_WAITING_DATA = WARN
-WARN += 1
-WARN_END_OF_PROG = WARN
-WARN += 1
-WARN_PRINTING = WARN
-
-ERR = 1000
-ERR_OP_INEXISTANTE = ERR
-ERR += 1
-ERR_PARAM_INEXISTANTE = ERR
-ERR += 1
-ERR_ETIQ_INEXISTANTE = ERR
-ERR += 1
-ERR_NO_PROG = ERR
-ERR += 1
-ERR_PARAM_OBLIGATOIRE = ERR
-ERR += 1
-ERR_PARAM_INCORRECT = ERR
-
 ETAT = 1
 STOPPED  = ETAT
 ETAT += 1
@@ -173,14 +137,11 @@ class Machine(object):
 			#if op.name == 'GOTO':
 			#	pdb.set_trace()
 			self.check_line(op)
-			if self.erreur:
-				print "SYNTAXE ERREUR %s %s" % (self.erreur, self.errlig)
 
 	def check_line(self, op):
-		op.ok = True
+		op.ok = False
 		if op.name not in self.OPERANDE:
-			self.erreur = ERR_OP_INEXISTANTE
-			self.errlig = op.no
+			raise Err("Instruction inexistante", op.no)
 		else:
 			if op.name == 'INIT':
 				pass
@@ -188,25 +149,20 @@ class Machine(object):
 				pass
 			elif op.name in ('$', 'ETIQ'):
 				if not op.param1:
-					self.erreur = ERR_PARAM_OBLIGATOIRE
-					self.ok = False
+					raise Err("Parametre obligatoire", op.no)
 			elif op.name == 'CALL':
 				pass
 			elif op.name in ('GOTO', 'JMP_FALSE', 'JMP_TRUE'):
 				if not op.param1:
-					self.erreur = ERR_PARAM_OBLIGATOIRE
-					self.ok = False
+					raise Err("Parametre obligatoire", op.no)
 				if op.param1 not in self.etiq.keys():
-					self.erreur = ERR_ETIQ_INEXISTANTE
-					self.ok = False
+					raise Err("Etiquette inexistante", op.no)
 			elif op.name == 'PRINT':
 				if not op.param1:
-					self.erreur = ERR_PARAM_OBLIGATOIRE
-					self.ok = False
+					raise Err("Parametre obligatoire", op.no)
 			elif op.name == 'RAZ':
 				if not op.param1:
-					self.erreur = ERR_PARAM_OBLIGATOIRE
-					self.ok = False
+					raise Err("Parametre obligatoire", op.no)
 
 	def liste_prog(self):
 		for l in self.prog:
@@ -228,8 +184,7 @@ class Machine(object):
 			self.cursor = n
 		else:
 			self.etat = STOPPED
-			self.erreur = WARN_END_OF_PROG
-			self.errlig = 0
+			raise EndOfProg("End Of Prog", 0)
 
 	def execute(self):
 		if self.prog:
@@ -251,20 +206,18 @@ class Machine(object):
 					self.raz_registre()
 				else:
 					self.etat = STOPPED
-					self.erreur = ERR_PARAM_INCORRECT
-					self.errlig = op.no
+					raise ("Parametre incorrect", op.no)
 					op.ok = False
 			elif op.name == 'PRINT':
 				self.etat = PRINTING
-				self.erreur = ERR_PARAM_INCORRECT
-				self.errlig = op.no
 				self.data_out = op.param1
+				raise Printing("", op.no)
 			elif op.name == 'CALL':
 				if op.param1:
 					## On change le cursor
 					pass
 				else:
-					self.erreur = ERR_PARAM_INEXISTANT
+					raise Err(raison="Parametre inexistant", nolig=op.no)
 			elif op.name == 'GOTO':
 					pass
 			elif op.name == 'JMP_FALSE':
@@ -272,11 +225,33 @@ class Machine(object):
 			elif op.name == 'TEST':
 					pass
 			else:
-				self.erreur = ERR_OP_INEXISTANTE
+				raise Err(raison="Operation inconnue", nolig=op.no)
 		else:
-			self.erreur = ERR_NO_PROG
+			raise EndOfProg()
 
-	def tick(self, data = None):
+	def tick(self, data=None):
+		if data:
+			self.data_in = data
+		EXIT = False
+		while not EXIT:
+			self.inc_cursor()
+			self.etat = RUNNING
+			try:
+				self.execute()
+			except Printing:
+				EXIT = True
+			except Waiting:
+				EXIT = True
+			except Waiting:
+				EXIT = True
+			except:
+				print("Erreur :")
+				print("-"*60)
+				traceback.print_exc(file=sys.stdout)
+				print("-"*60)
+				EXIT = True
+
+	def old_tick(self, data = None):
 		#pdb.set_trace()
 		if data:
 			pass
@@ -330,11 +305,21 @@ def test():
 	log('Init')
 	M.mach_init()
 	if M.erreur:
-		M.liste_prog()
+		print "Erreur %s %s : " % (M.erreur, M.errlig)
 	log('Boucle principale : ')
-	for x in range(0,9):
-		M.tick()
-		if M.erreur:
+	EXIT = False
+	while not EXIT:
+		try:
+			M.tick()
+		except Waiting:
+			print "WAITING"
+			EXIT = True
+		except Printing:
+			print "[%s]" % M.data_out
+			EXIT = True
+		except EndOfProg:
+			EXIT = True
+		except:
 			M.liste_prog()
 			print M
 			
