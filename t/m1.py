@@ -95,7 +95,7 @@ class Machine(object):
 			'CONSTANTE', 'VAR', 'VARIABLE', 'REGISTRE', 
 			'PRINT', 'RAZ',
 			'READ',
-			'STATUS', 'TEST', 'INIT'
+			'STATUS', 'TEST', 'INIT', 'END'
 		]
 
 	def __str__(self):
@@ -121,7 +121,7 @@ class Machine(object):
 		R += '\n'
 		return R
 
-	def raz_registre(self):
+	def raz_registres(self):
 		for x in range(0,9):
 			self.registres['REG%0d' % x] = ''
 
@@ -131,7 +131,7 @@ class Machine(object):
 		self.errlig = 0
 
 	def mach_init(self):
-		self.raz_registre()
+		self.raz_registres()
 		self.variables = {}
 		self.status = False
 		self.erreur = 0
@@ -160,15 +160,12 @@ class Machine(object):
 		if op.name not in self.OPERANDE:
 			raise Err("Instruction inexistante", op.no)
 		else:
-			if op.name == 'INIT':
-				pass
-			elif op.name == 'READ':
-				pass
-			elif op.name in ('$', 'ETIQ'):
+			if op.name in ('$', 'ETIQ'):
 				if not op.param1:
 					raise Err("Parametre obligatoire", op.no)
 			elif op.name == 'CALL':
-				pass
+				if not op.param1:
+					raise Err("Function obligatoire", op.no)
 			elif op.name in ('GOTO', 'JMP_FALSE', 'JMP_TRUE'):
 				if not op.param1:
 					raise Err("Parametre obligatoire", op.no)
@@ -187,6 +184,9 @@ class Machine(object):
 		for l in self.prog:
 			print l
 
+	## -------------------------------
+	## Gestion du cursor d'execution
+	## -------------------------------
 	def inc_cursor(self):
 		n = self.cursor
 		n += 1
@@ -205,6 +205,9 @@ class Machine(object):
 			self.etat = STOPPED
 			raise EndOfProg("End Of Prog", 0)
 
+	##-------------------------
+	## Le processeur
+	##-------------------------
 	def execute(self):
 		if self.prog:
 			op = self.prog[self.cursor-1]
@@ -212,9 +215,11 @@ class Machine(object):
 
 			if op.name == 'INIT':
 				pass
+			elif op.name == 'END':
+				pass
 			elif op.name == 'READ':
 				if self.data_in:
-					self.registre[op.param1] = self.data_in
+					self.registres[op.param1] = self.data_in
 					self.data_in = None
 				else:
 					self.etat = WAITING
@@ -227,7 +232,7 @@ class Machine(object):
 				elif op.param1 == 'STATUS':
 					self.raz_status()
 				elif op.param1 == 'REGISTRE':
-					self.raz_registre()
+					self.raz_registres()
 				else:
 					self.etat = STOPPED
 					raise ("Parametre incorrect", op.no)
@@ -243,7 +248,8 @@ class Machine(object):
 				else:
 					raise Err(raison="Parametre inexistant", nolig=op.no)
 			elif op.name == 'GOTO':
-					pass
+				c = self.etiq[op.param1]
+				self.set_cursor(c)
 			elif op.name == 'JMP_FALSE':
 					pass
 			elif op.name == 'TEST':
@@ -253,13 +259,18 @@ class Machine(object):
 		else:
 			raise EndOfProg()
 
+	## -----------------------------
+	## Execution d'une instruction 
+	## -----------------------------
 	def tick(self, data=None):
 		EXIT = False
+		user_input = data
 		while not EXIT:
-			if not data:
+			if not user_input:
 				self.inc_cursor()
 			else:
-				self.data_in = data
+				self.data_in = user_input
+				user_input = None
 			## On continue
 			self.etat = RUNNING
 			try:
@@ -310,12 +321,11 @@ def log(msg=''):
 ## --------
 ## TEST
 ## --------
-def test():
+def test(fichier):
 	log('Debut')
 	M = Machine('TEST')
 	log('Set Prog')
-	#set_prog(M.prog)
-	set_prog_fic('TEST1.txt', M.prog)
+	set_prog_fic(fichier, M.prog)
 	log('Init')
 	M.mach_init()
 	if M.erreur:
@@ -339,4 +349,6 @@ def test():
 	log('Fin')
 
 if __name__ == '__main__':
-	test()
+	f = 'src/TEST1.txt'
+	f = 'src/TEST2.txt'
+	test( f )
