@@ -5,7 +5,7 @@
 ## MACHINEVIRTUELLE en PYTHON
 ## ---------------------------
 
-import sys, traceback
+import os, sys, traceback
 import datetime
 import shlex
 import pdb
@@ -50,6 +50,9 @@ class Operande(object):
 		self.no = 0
 		self.param1 = ''
 		self.param2 = ''
+		self.param3 = ''
+		self.param4 = ''
+		self.params = None
 		self.ok = False
 
 	def __str__(self):
@@ -89,7 +92,7 @@ class Machine(object):
 		self.etiq = {}
 
 		self.OPERANDE = [
-			'$', 'ETIQ',
+			'$', 'ETIQ', 'LET',
 			'CALL',
 			'JMP_FALSE', 'JMP_TRUE', 'GOTO',
 			'CONSTANTE', 'VAR', 'VARIABLE', 'REGISTRE', 
@@ -122,8 +125,8 @@ class Machine(object):
 		return R
 
 	def raz_registres(self):
-		for x in range(0,9):
-			self.registres['REG%0d' % x] = ''
+		for x in range(0,10):
+			self.registres['R%d' % x] = ''
 
 	def raz_status(self):
 		self.status = False
@@ -163,6 +166,9 @@ class Machine(object):
 			if op.name in ('$', 'ETIQ'):
 				if not op.param1:
 					raise Err("Parametre obligatoire", op.no)
+			elif op.name == 'LET':
+				if op.param3 != "=":
+					raise Err("Affectation incorrecte", op.no)
 			elif op.name == 'CALL':
 				if not op.param1:
 					raise Err("Function obligatoire", op.no)
@@ -203,7 +209,7 @@ class Machine(object):
 			self.cursor = n
 		else:
 			self.etat = STOPPED
-			raise EndOfProg("End Of Prog", 0)
+			raise EndOfProg("Set Cursor", 0)
 
 	##-------------------------
 	## Le processeur
@@ -216,6 +222,8 @@ class Machine(object):
 			if op.name == 'INIT':
 				pass
 			elif op.name == 'END':
+				pass
+			elif op.name == 'LET':
 				pass
 			elif op.name == 'READ':
 				if self.data_in:
@@ -239,7 +247,10 @@ class Machine(object):
 					op.ok = False
 			elif op.name == 'PRINT':
 				self.etat = PRINTING
-				self.data_out = op.param1
+				if op.param1 == '%':
+					self.data_out = self.registres[op.param2]
+				else:
+					self.data_out = op.param1
 				raise Printing("PRINT", op.no)
 			elif op.name == 'CALL':
 				if op.param1:
@@ -257,23 +268,23 @@ class Machine(object):
 			else:
 				raise Err(raison="Operation inconnue", nolig=op.no)
 		else:
-			raise EndOfProg()
+			raise EndOfProg('Execute', 0)
 
 	## -----------------------------
 	## Execution d'une instruction 
-	## -----------------------------
+		## -----------------------------
 	def tick(self, data=None):
 		EXIT = False
 		user_input = data
 		while not EXIT:
-			if not user_input:
-				self.inc_cursor()
-			else:
-				self.data_in = user_input
-				user_input = None
-			## On continue
-			self.etat = RUNNING
 			try:
+				if not user_input:
+					self.inc_cursor()
+				else:
+					self.data_in = user_input
+					user_input = None
+				## On continue
+				self.etat = RUNNING
 				self.execute()
 			except Printing:
 				self.etat = PRINTING
@@ -302,13 +313,42 @@ def set_prog_fic(ficname, p):
 			if l.startswith('#'):
 				next
 			l = l.strip()
-			i = shlex.split(l)
+			i = shlex.shlex(l)
 			op = Operande()
-			op.name = i[0]
-			if len(i) >= 2:
-				op.param1 = i[1]
-			if len(i) == 3:
-				op.param1 = i[2]
+			t = [ x for x in i ]
+			print t
+			op.name = t.pop(0)
+			# param 1
+			if t:
+				d = t.pop(0)
+				if d.startswith(( "'", '"' )):
+					op.param1 = shlex.split(d).pop(0)
+				else:
+					op.param1 = d
+			# param 2
+			if t:
+				d = t.pop(0)
+				if d.startswith(("'", '"')):
+					op.param2 = shlex.split(d).pop(0)
+				else:
+					op.param2 = d
+			# param 3
+			if t:
+				d = t.pop(0)
+				if d.startswith(("'", '"')):
+					op.param3 = shlex.split(d).pop(0)
+				else:
+					op.param3 = d
+			# param 4
+			if t:
+				d = t.pop(0)
+				if d.startswith(("'", '"')):
+					op.param4 = shlex.split(d).pop(0)
+				else:
+					op.param4 = d
+			## et si il en reste ?
+			if t:
+				op.params = t
 			p.append(op)
 	
 ## ------------------------
@@ -342,13 +382,19 @@ def test(fichier):
 			print "[%s]" % M.data_out
 		elif M.etat == FINISHED:
 			EXIT = True
+		elif M.etat == STOPPED:
+			EXIT = True
 		else:
 			M.liste_prog()
 			print M
 			
+	print M
 	log('Fin')
 
 if __name__ == '__main__':
 	f = 'src/TEST1.txt'
 	f = 'src/TEST2.txt'
+	if len(sys.argv) > 1:
+		if os.path.exists(sys.argv[1]):
+			f = sys.argv[1]
 	test( f )

@@ -3,6 +3,7 @@
 import shlex
 
 f = open('src/PRINT.txt')
+f = open('src/LET.txt')
 
 line = '-' * 30
 

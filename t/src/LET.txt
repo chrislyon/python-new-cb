@@ -1,0 +1,4 @@
+LET %R1 = %R2
+LET %R3 = 4
+LET %R5 = "BONJOUR"
+END
