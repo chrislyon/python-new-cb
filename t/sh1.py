@@ -2,7 +2,7 @@
 
 import shlex
 
-f = open('TEST1.txt')
+f = open('src/TEST1.txt')
 
 line = '-' * 30
 
