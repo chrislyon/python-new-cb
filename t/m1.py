@@ -1,18 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
 ## ---------------------------
 ## MACHINEVIRTUELLE en PYTHON
 ## ---------------------------
+"""
 
 import os, sys, traceback
 import datetime
 import shlex
-import pdb
+#import pdb
 
 
 class Err(Exception):
+	"""
+	La base de mes erreurs
+	"""
 	def __init__(self, raison="<vide>", nolig=0):
+		Exception.__init__(self, raison)
 		self.raison = raison
 		self.nolig = nolig
 
@@ -20,7 +26,11 @@ class Err(Exception):
 		return "%s : %s " % (self.nolig, self.raison)
 
 class Printing(Exception):
+	"""
+		La machine veut afficher qq chose
+	"""
 	def __init__(self, raison="<vide>", nolig=0):
+		Exception.__init__(self, raison)
 		self.raison = raison
 		self.nolig = nolig
 
@@ -28,7 +38,11 @@ class Printing(Exception):
 		return "%s : %s " % (self.nolig, self.raison)
 
 class Waiting(Exception):
+	"""
+		La machine attend une donnée
+	"""
 	def __init__(self, raison="<vide>", nolig=0):
+		Exception.__init__(self, raison)
 		self.raison = raison
 		self.nolig = nolig
 
@@ -36,7 +50,11 @@ class Waiting(Exception):
 		return "%s : %s " % (self.nolig, self.raison)
 
 class EndOfProg(Exception):
+	"""
+		On est arrivé au bout
+	"""
 	def __init__(self, raison="<vide>", nolig=0):
+		Exception.__init__(self, raison)
 		self.raison = raison
 		self.nolig = nolig
 
@@ -45,34 +63,39 @@ class EndOfProg(Exception):
 
 
 class Operande(object):
-	def __init__(self, name=''):
-		self.name = name
-		self.no = 0
+	"""
+		Une operation
+	"""
+	def __init__(self):
+		self.name = ''
+		self.nolign = 0
 		self.param1 = ''
 		self.param2 = ''
 		self.param3 = ''
 		self.param4 = ''
 		self.params = None
-		self.ok = False
+		self.status = False
 
 	def __str__(self):
 		return '%03d : OP:%-10.10s : %-5.5s : %s %s' % \
-			( self.no, self.name, self.ok, self.param1, self.param2)
+			(self.nolign, self.name, self.status, self.param1, self.param2)
 ETAT = 1
-STOPPED  = ETAT
+STOPPED = ETAT
 ETAT += 1
-CHECKING  = ETAT
+CHECKING = ETAT
 ETAT += 1
-RUNNING  = ETAT
+RUNNING = ETAT
 ETAT += 1
-WAITING  = ETAT
+WAITING = ETAT
 ETAT += 1
 PRINTING = ETAT
 ETAT += 1
 FINISHED = ETAT
 
 class Machine(object):
-
+	"""
+	LA MACHINE VIRTUELLE SUPER BASIC
+	"""
 	def __init__(self, name):
 		self.name = name
 		self.registres = {}
@@ -95,45 +118,49 @@ class Machine(object):
 			'$', 'ETIQ', 'LET',
 			'CALL',
 			'JMP_FALSE', 'JMP_TRUE', 'GOTO',
-			'CONSTANTE', 'VAR', 'VARIABLE', 'REGISTRE', 
+			'CONSTANTE', 'VAR', 'VARIABLE', 'REGISTRE',
 			'PRINT', 'RAZ',
 			'READ',
 			'STATUS', 'TEST', 'INIT', 'END'
 		]
 
 	def __str__(self):
-		R = 'MACH:%s status=%s erreur=%s errlig=%s' % (self.name, self.status, self.erreur, self.errlig)
-		R += '\n'
-		R += 'Registres    : \n'
-		r = self.registres.items()
-		r.sort()
-		for x in r:
-			R += '%s = %s\n' % x
-		R += '\n'
-		R += 'Variable(s)  : \n'
-		for k,v in self.variables.items():
-			R += 'VAR %s = %s\n' % (k,v)
-		R += '\n'
-		R += 'Constante(s) : \n'
-		for k,v in self.constantes.items():
-			R += 'CONST %s = %s\n' % (k,v)
-		R += '\n'
-		R += 'Etiquette(s) : \n'
-		for k,v in self.etiq.items():
-			R += 'ETIQ %s = %s\n' % (k,v)
-		R += '\n'
-		return R
+		ret = 'MACH:%s ' % self.name
+		ret += 'status=%s ' % self.status
+		ret += 'erreur=%s ' % self.erreur
+		ret += 'errlig=%s' % self.errlig
+		ret += '\n'
+		ret += 'Registres    : \n'
+		for i in sorted(self.registres.items()):
+			ret += '%s = %s\n' % i
+		ret += '\n'
+		ret += 'Variable(s)  : \n'
+		for k, v in self.variables.items():
+			ret += 'VAR %s = %s\n' % (k, v)
+		ret += '\n'
+		ret += 'Constante(s) : \n'
+		for k, v in self.constantes.items():
+			ret += 'CONST %s = %s\n' % (k, v)
+		ret += '\n'
+		ret += 'Etiquette(s) : \n'
+		for k, v in self.etiq.items():
+			ret += 'ETIQ %s = %s\n' % (k, v)
+		ret += '\n'
+		return ret
 
 	def raz_registres(self):
-		for x in range(0,10):
-			self.registres['R%d' % x] = ''
+		""" Remise a zero des regitres """
+		for i in range(0, 10):
+			self.registres['R%d' % i] = ''
 
 	def raz_status(self):
+		""" Remise a zero des status """
 		self.status = False
 		self.erreur = 0
 		self.errlig = 0
 
 	def mach_init(self):
+		""" init de la vm """
 		self.raz_registres()
 		self.variables = {}
 		self.status = False
@@ -142,15 +169,25 @@ class Machine(object):
 		self.cursor = 0
 		self.check_prog()
 
+	## -------------------------------
+	## VERIFICATION AVANT EXECUTION
+	## -------------------------------
 	def check_prog(self):
+		""" Verif Prog """
 		self.etat = CHECKING
 		## Numerotation + recup des etiquettes
-		n = 0
+		num_lig = 0
 		for op in self.prog:
-			n += 1
-			op.no = n
+			num_lig += 1
+			op.nolign = num_lig
 			if op.name in ('$', 'ETIQ'):
-				self.etiq[op.param1] = op.no
+				self.etiq[op.param1] = op.nolign
+		## Verif si END a la fin
+		#if self.prog[-1].op.name != 'END':
+		#	p = Operande()
+		#	p.name = 'END'
+		#	self.prog.append(p)
+
 
 		## Verification syntaxe
 		for op in self.prog:
@@ -159,34 +196,36 @@ class Machine(object):
 			self.check_line(op)
 
 	def check_line(self, op):
-		op.ok = False
+		""" Verif d'une ligne """
+		op.status = False
 		if op.name not in self.OPERANDE:
-			raise Err("Instruction inexistante", op.no)
+			raise Err("Instruction inexistante", op.nolign)
 		else:
 			if op.name in ('$', 'ETIQ'):
 				if not op.param1:
-					raise Err("Parametre obligatoire", op.no)
+					raise Err("Parametre obligatoire", op.nolign)
 			elif op.name == 'LET':
 				if op.param3 != "=":
-					raise Err("Affectation incorrecte", op.no)
+					raise Err("Affectation incorrecte", op.nolign)
 			elif op.name == 'CALL':
 				if not op.param1:
-					raise Err("Function obligatoire", op.no)
+					raise Err("Function obligatoire", op.nolign)
 			elif op.name in ('GOTO', 'JMP_FALSE', 'JMP_TRUE'):
 				if not op.param1:
-					raise Err("Parametre obligatoire", op.no)
+					raise Err("Parametre obligatoire", op.nolign)
 				if op.param1 not in self.etiq.keys():
-					raise Err("Etiquette inexistante", op.no)
+					raise Err("Etiquette inexistante", op.nolign)
 			elif op.name == 'PRINT':
 				if not op.param1:
-					raise Err("Parametre obligatoire", op.no)
+					raise Err("Parametre obligatoire", op.nolign)
 			elif op.name == 'RAZ':
 				if not op.param1:
-					raise Err("Parametre obligatoire", op.no)
+					raise Err("Parametre obligatoire", op.nolign)
 		##
-		op.ok = True
+		op.status = True
 
 	def liste_prog(self):
+		""" Listing du programme """
 		for l in self.prog:
 			print l
 
@@ -194,16 +233,19 @@ class Machine(object):
 	## Gestion du cursor d'execution
 	## -------------------------------
 	def inc_cursor(self):
+		""" incremente le cursor d'execution """
 		n = self.cursor
 		n += 1
 		self.set_cursor(n)
 
 	def dec_cursor(self):
+		""" decremente le cursor d'execution """
 		n = self.cursor
 		n -= 1
 		self.set_cursor(n)
 
 	def set_cursor(self, n):
+		""" affecte le cursor d'execution """
 		self.cursor = n
 		if n > 0 and n < len(self.prog):
 			self.cursor = n
@@ -215,6 +257,9 @@ class Machine(object):
 	## Le processeur
 	##-------------------------
 	def execute(self):
+		"""
+			Execution d'un operation 
+		"""
 		if self.prog:
 			op = self.prog[self.cursor-1]
 			print "Executing : %s " % op
@@ -225,15 +270,15 @@ class Machine(object):
 				pass
 			elif op.name == 'LET':
 				pass
+			elif op.name in ('$', 'ETIQ'):
+				pass
 			elif op.name == 'READ':
 				if self.data_in:
 					self.registres[op.param1] = self.data_in
 					self.data_in = None
 				else:
 					self.etat = WAITING
-					raise Waiting("READ",op.no)
-			elif op.name in ('$', 'ETIQ'):
-				pass
+					raise Waiting("READ", op.nolign)
 			elif op.name == 'RAZ':
 				if op.param1 == 'VAR':
 					pass
@@ -243,37 +288,40 @@ class Machine(object):
 					self.raz_registres()
 				else:
 					self.etat = STOPPED
-					raise ("Parametre incorrect", op.no)
-					op.ok = False
+					op.status = False
+					raise ("Parametre incorrect", op.nolign)
 			elif op.name == 'PRINT':
 				self.etat = PRINTING
 				if op.param1 == '%':
 					self.data_out = self.registres[op.param2]
 				else:
 					self.data_out = op.param1
-				raise Printing("PRINT", op.no)
+				raise Printing("PRINT", op.nolign)
 			elif op.name == 'CALL':
 				if op.param1:
 					## On change le cursor
 					pass
 				else:
-					raise Err(raison="Parametre inexistant", nolig=op.no)
+					raise Err(raison="Parametre inexistant", nolig=op.nolign)
 			elif op.name == 'GOTO':
 				c = self.etiq[op.param1]
 				self.set_cursor(c)
 			elif op.name == 'JMP_FALSE':
-					pass
+				pass
 			elif op.name == 'TEST':
-					pass
+				pass
 			else:
-				raise Err(raison="Operation inconnue", nolig=op.no)
+				raise Err(raison="Operation inconnue", nolig=op.nolign)
 		else:
 			raise EndOfProg('Execute', 0)
 
 	## -----------------------------
-	## Execution d'une instruction 
-		## -----------------------------
+	## Execution d'une instruction
+	## -----------------------------
 	def tick(self, data=None):
+		"""
+			Boucle d'execution
+		"""
 		EXIT = False
 		user_input = data
 		while not EXIT:
@@ -296,10 +344,10 @@ class Machine(object):
 				self.ETAT = STOPPED
 				EXIT = True
 			except:
-				print("Erreur :")
-				print("-"*60)
+				print "Erreur :"
+				print "-"*60
 				traceback.print_exc(file=sys.stdout)
-				print("-"*60)
+				print "-"*60
 				EXIT = True
 
 ## ------------------------
@@ -315,13 +363,13 @@ def set_prog_fic(ficname, p):
 			l = l.strip()
 			i = shlex.shlex(l)
 			op = Operande()
-			t = [ x for x in i ]
+			t = [x for x in i]
 			print t
 			op.name = t.pop(0)
 			# param 1
 			if t:
 				d = t.pop(0)
-				if d.startswith(( "'", '"' )):
+				if d.startswith(("'", '"')):
 					op.param1 = shlex.split(d).pop(0)
 				else:
 					op.param1 = d
@@ -350,51 +398,51 @@ def set_prog_fic(ficname, p):
 			if t:
 				op.params = t
 			p.append(op)
-	
+
 ## ------------------------
 ## Petite routine de log
 ## ------------------------
 def log(msg=''):
 	now = datetime.datetime.now().time()
-	print '%s : %s' % (now,msg)
+	print '%s : %s' % (now, msg)
 
 ## --------
 ## TEST
 ## --------
 def test(fichier):
 	log('Debut')
-	M = Machine('TEST')
+	M1 = Machine('TEST')
 	log('Set Prog')
-	set_prog_fic(fichier, M.prog)
+	set_prog_fic(fichier, M1.prog)
 	log('Init')
-	M.mach_init()
-	if M.erreur:
-		print "Erreur %s %s : " % (M.erreur, M.errlig)
+	M1.mach_init()
+	if M1.erreur:
+		print "Erreur %s %s : " % (M1.erreur, M1.errlig)
 	log('Boucle principale : ')
 	EXIT = False
 	while not EXIT:
-		M.tick()
-		if M.etat == WAITING:
+		M1.tick()
+		if M1.etat == WAITING:
 			print "WAITING"
 			r = raw_input('>')
-			M.tick(r)
-		elif M.etat == PRINTING:
-			print "[%s]" % M.data_out
-		elif M.etat == FINISHED:
+			M1.tick(r)
+		elif M1.etat == PRINTING:
+			print "[%s]" % M1.data_out
+		elif M1.etat == FINISHED:
 			EXIT = True
-		elif M.etat == STOPPED:
+		elif M1.etat == STOPPED:
 			EXIT = True
 		else:
-			M.liste_prog()
-			print M
-			
-	print M
+			M1.liste_prog()
+			print M1
+
+	print M1
 	log('Fin')
 
 if __name__ == '__main__':
-	f = 'src/TEST1.txt'
-	f = 'src/TEST2.txt'
+	fic = 'src/TEST1.txt'
+	fic = 'src/TEST2.txt'
 	if len(sys.argv) > 1:
 		if os.path.exists(sys.argv[1]):
-			f = sys.argv[1]
-	test( f )
+			fic = sys.argv[1]
+	test(fic)
