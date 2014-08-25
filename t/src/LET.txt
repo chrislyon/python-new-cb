@@ -1,4 +1,5 @@
-LET %R1 = %R2
 LET %R3 = 4
 LET %R5 = "BONJOUR"
+LET %R2 = 1000
+LET %R1 = %R2
 END

@@ -1,0 +1,8 @@
+LET %R1 = "BONJOUR"
+LET %R2 = 1000
+LET %R3 = 4
+TEST %R1 = "BONJOUR"
+TEST %R2 = %R1
+TEST %R2 > %R3
+TEST %R4 >= %R2
+END

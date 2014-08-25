@@ -10,9 +10,12 @@
 import os, sys, traceback
 import datetime
 import shlex
-#import pdb
+import pdb
 
 
+## -------------------------
+## Exception / erreur
+## -------------------------
 class Err(Exception):
 	"""
 	La base de mes erreurs
@@ -62,6 +65,9 @@ class EndOfProg(Exception):
 		return "%s : %s " % (self.nolig, self.raison)
 
 
+## ------------------------
+## Une operation / tick 
+## ------------------------
 class Operande(object):
 	"""
 		Une operation
@@ -73,12 +79,14 @@ class Operande(object):
 		self.param2 = ''
 		self.param3 = ''
 		self.param4 = ''
+		self.param5 = ''
 		self.params = None
 		self.status = False
 
 	def __str__(self):
-		return '%03d : OP:%-10.10s : %-5.5s : %s %s' % \
-			(self.nolign, self.name, self.status, self.param1, self.param2)
+		return '%03d : OP:%-10.10s : %-5.5s : %s %s %s %s %s' % \
+			(self.nolign, self.name, self.status, \
+			self.param1, self.param2, self.param3, self.param4, self.param5 )
 ETAT = 1
 STOPPED = ETAT
 ETAT += 1
@@ -205,8 +213,7 @@ class Machine(object):
 				if not op.param1:
 					raise Err("Parametre obligatoire", op.nolign)
 			elif op.name == 'LET':
-				if op.param3 != "=":
-					raise Err("Affectation incorrecte", op.nolign)
+				pass
 			elif op.name == 'CALL':
 				if not op.param1:
 					raise Err("Function obligatoire", op.nolign)
@@ -253,6 +260,25 @@ class Machine(object):
 			self.etat = STOPPED
 			raise EndOfProg("Set Cursor", 0)
 
+	## ------------
+	## Affectation
+	## ------------
+	def affectation(self, op):
+		#pdb.set_trace()
+		""" Affectation """
+		if op.param1 == '%':
+			RLeft = op.param2
+		else:
+			raise Err("Affectation incorrecte", op.nolign)
+		## op.param3 = '='
+		if op.param4 == '%':
+			## Affectation de registe
+			Valeur = self.registres[op.param5]
+		else:
+			## Valeur en dur
+			Valeur = op.param4
+		self.registres[RLeft] = Valeur
+
 	##-------------------------
 	## Le processeur
 	##-------------------------
@@ -269,7 +295,7 @@ class Machine(object):
 			elif op.name == 'END':
 				pass
 			elif op.name == 'LET':
-				pass
+				self.affectation( op )
 			elif op.name in ('$', 'ETIQ'):
 				pass
 			elif op.name == 'READ':
@@ -364,7 +390,7 @@ def set_prog_fic(ficname, p):
 			i = shlex.shlex(l)
 			op = Operande()
 			t = [x for x in i]
-			print t
+			#print t
 			op.name = t.pop(0)
 			# param 1
 			if t:
@@ -394,6 +420,13 @@ def set_prog_fic(ficname, p):
 					op.param4 = shlex.split(d).pop(0)
 				else:
 					op.param4 = d
+			# param 5
+			if t:
+				d = t.pop(0)
+				if d.startswith(("'", '"')):
+					op.param5 = shlex.split(d).pop(0)
+				else:
+					op.param5 = d
 			## et si il en reste ?
 			if t:
 				op.params = t
@@ -436,11 +469,12 @@ def test(fichier):
 			M1.liste_prog()
 			print M1
 
+	log('Avant la fin')
 	print M1
 	log('Fin')
 
 if __name__ == '__main__':
-	fic = 'src/TEST1.txt'
+	#fic = 'src/TEST1.txt'
 	fic = 'src/TEST2.txt'
 	if len(sys.argv) > 1:
 		if os.path.exists(sys.argv[1]):
