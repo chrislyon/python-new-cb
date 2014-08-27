@@ -279,6 +279,35 @@ class Machine(object):
 			Valeur = op.param4
 		self.registres[RLeft] = Valeur
 
+	## -------
+	## TEST
+	## -------
+	## TODO => pb de gestion des types pour les tests
+	def oper_test(self, op):
+		""" Operation de TEST """
+		DCOND = {
+			'EQ' : '==',
+			'NE' : '!=',
+			'GT' : '>',
+			'LT' : '<',
+			'GE' : '>=',
+			'LE' : '<=',
+		}
+		if op.param1 == '%':
+			Left = self.registres[op.param2]
+		else:
+			raise Err("Test incorrect", op.nolign)
+		Cond = DCOND[op.param3]
+		if op.param4 == '%':
+			Right = self.registres[op.param5]
+		else:
+			Right = op.param4
+		try:
+			self.status = eval(Left+Cond+Right)
+		except:
+			raise Err("Test pb %s %s %s" % (Left, Cond, Right), op.nolign)
+
+
 	##-------------------------
 	## Le processeur
 	##-------------------------
@@ -335,7 +364,7 @@ class Machine(object):
 			elif op.name == 'JMP_FALSE':
 				pass
 			elif op.name == 'TEST':
-				pass
+				self.oper_test(op)
 			else:
 				raise Err(raison="Operation inconnue", nolig=op.nolign)
 		else:
@@ -390,7 +419,7 @@ def set_prog_fic(ficname, p):
 			i = shlex.shlex(l)
 			op = Operande()
 			t = [x for x in i]
-			#print t
+			print t
 			op.name = t.pop(0)
 			# param 1
 			if t:
