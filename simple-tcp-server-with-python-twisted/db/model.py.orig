@@ -1,0 +1,243 @@
+<<<<<<< /root/dvp/simple-tcp-server-with-python-twisted/db/model.py
+## ------------------------------
+## Init de la base de donnees
+## ------------------------------
+
+import os
+import datetime
+import elixir
+from elixir import *
+
+metadata = elixir.metadata
+
+#class Agent(Entity):
+#    using_options(tablename='AGENT')
+#    name = Field(Unicode(30))
+#    description = Field(UnicodeText)
+#    server_ip = Field(Unicode(30))
+#    server_name = Field(Unicode(30))
+#    server_port = Field(Integer)
+#    password = Field(String(20))
+#    default_agent = Field(Boolean)
+#
+#    def liste(self):
+#        return []
+#
+#    def __repr__(self):
+#        return "<Agent : %s>" % self.name
+#
+#class Job(Entity):
+#    using_options(tablename='JOB')
+#    name = Field(Unicode(30))
+#    cmd = Field(UnicodeText)
+#    description = Field(UnicodeText)
+#    job_exec = OneToMany('JobExec')
+#
+#    def __repr__(self):
+#        return '<Job "%s" (%d)>' % (self.name, self.cmd)
+#
+#class JobExec(Entity):
+#    using_options(tablename='JOB_EXEC')
+#    job = ManyToOne('Job')
+#    status = Field(Integer)
+#    return_code = Field(Integer)
+#    stderr = Field(UnicodeText)
+#    sdtout = Field(UnicodeText)
+#    start_date = Field(DateTime)
+#    end_date = Field(DateTime)
+#    ex_log = OneToMany('ExecLog')
+#
+#class ExecLog(Entity):
+#    using_options(tablename='EXEC_LOG')
+#    job_exec = ManyToOne('JobExec')
+#    ex_date = Field(DateTime)
+#    ex_type = Field(Unicode(10))
+#    ex_comment = Field(UnicodeText)
+def populate():
+    ## Creation d'une serie de dossiers
+    d = Dossier()
+    d.numdos = u"1500"
+    d.etape = 0
+    d.num_oper = 1
+    d.suspendu = False
+    d.temps = 0
+    d.banque = u"BNP"
+    d.qte = 1000
+    d.nb_folio = 2
+    d.machine = u"MFI"
+    session.commit()
+
+
+class Dossier(Entity):
+    using_options(tablename='DOSSIERS')
+    numdos  = Field(Unicode(10))
+    date_deb    = Field(DateTime)
+    date_fin    = Field(DateTime)
+    etape   = Field(Integer)
+    num_oper    = Field(Integer)
+    suspendu    = Field(Boolean)
+    temps   = Field(Integer)
+    user    = Field(Unicode(10))
+    banque  = Field(Unicode(10))
+    machine = Field(Unicode(10))
+    qte     = Field(Integer)
+    nb_folio    = Field(Integer)
+    numbo1  = Field(Unicode(15))
+    numbo2  = Field(Unicode(15))
+    numbo3  = Field(Unicode(15))
+    numbo4  = Field(Unicode(15))
+    numbo5  = Field(Unicode(15))
+
+    def liste(self):
+        return []
+
+    def __repr__(self):
+        return "<Agent : %s>" % self.name
+
+def init_from_scratch():
+    datafile = "data/data_ordo.sqlite"
+    if os.path.exists( datafile ):
+        print "Effacement fichier de test %s " % datafile
+        os.remove( datafile )
+    metadata.bind = "sqlite:///"+datafile
+
+    metadata.bind.echo = True
+    metadata.bind.echo = False
+    setup_all()
+    create_all()
+    populate()
+
+def test():
+    metadata.bind =  "sqlite:///data/data_ordo.sqlite"
+    setup_all()
+    a =  Dossier.query.first()
+    print a.numdos, a.qte
+
+
+if __name__ == '__main__':
+    init_from_scratch()
+    test()
+    pass
+=======
+## ------------------------------
+## Init de la base de donnees
+## ------------------------------
+
+import os
+import datetime
+import elixir
+from elixir import *
+
+metadata = elixir.metadata
+
+#class Agent(Entity):
+#    using_options(tablename='AGENT')
+#    name = Field(Unicode(30))
+#    description = Field(UnicodeText)
+#    server_ip = Field(Unicode(30))
+#    server_name = Field(Unicode(30))
+#    server_port = Field(Integer)
+#    password = Field(String(20))
+#    default_agent = Field(Boolean)
+#
+#    def liste(self):
+#        return []
+#
+#    def __repr__(self):
+#        return "<Agent : %s>" % self.name
+#
+#class Job(Entity):
+#    using_options(tablename='JOB')
+#    name = Field(Unicode(30))
+#    cmd = Field(UnicodeText)
+#    description = Field(UnicodeText)
+#    job_exec = OneToMany('JobExec')
+#    
+#    def __repr__(self):
+#        return '<Job "%s" (%d)>' % (self.name, self.cmd)
+#
+#class JobExec(Entity):
+#    using_options(tablename='JOB_EXEC')
+#    job = ManyToOne('Job')
+#    status = Field(Integer)
+#    return_code = Field(Integer)
+#    stderr = Field(UnicodeText)
+#    sdtout = Field(UnicodeText)
+#    start_date = Field(DateTime)
+#    end_date = Field(DateTime)
+#    ex_log = OneToMany('ExecLog')
+#
+#class ExecLog(Entity):
+#    using_options(tablename='EXEC_LOG')
+#    job_exec = ManyToOne('JobExec')
+#    ex_date = Field(DateTime)
+#    ex_type = Field(Unicode(10))
+#    ex_comment = Field(UnicodeText)
+#
+
+def populate():
+    ## Creation d'une serie de dossiers
+    d = Dossier()
+    d.numdos = 1500
+    d.etape = 0
+    d.num_oper = 1
+    d.suspendu = False
+    d.temps = 0
+    d.banque = "BNP"
+    d.qte = 1000
+    d.nb_folio = 2
+    d.machine = "MFI"
+    session.commit()
+
+
+class Dossier(Entity):
+    using_options(tablename='DOSSIERS')
+    numdos 	= Field(Unicode(10))
+    date_deb 	= Field(DateTime)
+    date_fin 	= Field(DateTime)
+    etape	= Field(Integer)
+    num_oper	= Field(Integer)
+    suspendu	= Field(Boolean)
+    temps	= Field(Integer)
+    user	= Field(Unicode(10))
+    banque	= Field(Unicode(10))
+    machine	= Field(Unicode(10))
+    qte		= Field(Integer)
+    nb_folio	= Field(Integer)
+    numbo1	= Field(Unicode(15))
+    numbo2	= Field(Unicode(15))
+    numbo3	= Field(Unicode(15))
+    numbo4	= Field(Unicode(15))
+    numbo5	= Field(Unicode(15))
+
+    def liste(self):
+        return []
+
+    def __repr__(self):
+        return "<Agent : %s>" % self.name
+
+def init_from_scratch():
+    datafile = "data/data_ordo.sqlite"
+    if os.path.exists( datafile ):
+        print "Effacement fichier de test %s " % datafile
+        os.remove( datafile )
+    metadata.bind = "sqlite:///"+datafile
+
+    metadata.bind.echo = True
+    metadata.bind.echo = False
+    setup_all()
+    create_all()
+    populate()
+
+def test():
+    metadata.bind =  "sqlite:///data/data_ordo.sqlite"
+    setup_all()
+    a =  Dossier.query.first()
+    print a.numdos, a.qte
+        
+
+if __name__ == '__main__':
+    init_from_scratch()
+    test()
+    pass
+>>>>>>> /tmp/model.py~other.n740zk

@@ -1,0 +1,40 @@
+
+Le but est d'avoir une structure : 
+
+srv_tcp => gere l'acces TCP plus les commandes de bases
+LIST
+SHUTDOWN
+QUIT 
+sinon passe la main a Session
+
+=> Sessions classe pour gerer les sessions dans leur ensembles
+=> Session Classe une instance = une session
+
+Quand on passe la main a session c'est grace a une boucle du style
+
+EXIT=False
+While Not EXIT:
+	Session.tick()	# on avance d'un pas 
+	if Session.ETAT = Printing
+		Affichage du message
+	if Session.ETAT = Waiting
+		Affichage du prompt
+		attente commande
+	if Session.ETAT = ERROR
+		Impression de l'erreur
+	if Session.ETAT = FINISHED
+		EXIT = True
+	if Session.ETAT = STOPPED
+		EXIT = True
+
+
+	Session doit avoir
+	La fonction tick()
+	Les attributs
+		ETAT
+		ERREUR
+		ERR_DESC
+		Entree_Standard
+		Sortie_Standard
+
+

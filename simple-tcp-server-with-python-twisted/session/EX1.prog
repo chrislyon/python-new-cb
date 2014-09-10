@@ -1,0 +1,75 @@
+
+# Programme exemple
+
+## Saisie du dossier
+LABEL SAISIE_DOSSIER
+INPUT 'Dossier :' DOS
+LOOK F.DOSSIER DOS
+SAISIE_DOSSIER IF FALSE MESSAGE 'Dossier Inexistant'
+
+## Saisie de l'operation
+LABEL SAISIE_OPERATION
+INPUT 'Operation : ' OPER
+## Extraction des infos
+USER = OPER[1:3]
+ETAPE = OPER[4:4]
+POSTE = OPER[5:]
+LOOK F.USER USER
+SAISIE_OPERATION IF FALSE MESSAGE 'Operation Incorrecte'
+LOOK F.ETAPE ETAPE
+SAISIE_OPERATION IF FALSE MESSAGE 'Etape Incorrecte'
+LOOK F.POSTE POSTE
+SAISIE_OPERATION IF FALSE MESSAGE 'Poste Incorrect'
+
+## On verifie si l'on doit saisir une bobine
+CHECK SESSION.BOBINE
+IF FALSE VALIDATION
+LABEL SAISIE_BOBINE
+INPUT 'Bobine : ' BOBINE
+CHECK BOBINE = GLOBAL.BOBINE_VIDE
+LOOK F.BOBINE BOBINE
+IF FALSE SAISIE_BOBINE MESSAGE 'No de Bobine inconnu'
+
+LABEL VALIDATION
+
+# use CODBAR;
+# create table XHISTOCB (
+# CHRONO  integer not null,
+# DATDEB  date not null,
+# DATFIN  date not null,
+# DATCRE  date not null,
+# DATRECUP    date not null,
+# ETAPE   integer not null,
+# HDEB    varchar(8) not null,
+# HFIN    varchar(8) not null,
+# NDOUCHE     integer not null,
+# OPENUM  integer not null,
+# SUSPENDU    integer not null,
+# TEMPS   integer not null,
+# XDCNUM  varchar(8) not null,
+# XUSRCB  char(3) not null,
+# XWSTCB  varchar(4) not null
+# );
+# 
+# create unique index CLE1 on XHISTOCB ( XDCNUM, OPENUM );
+
+BASE.HDEB
+BASE.DDEB
+BASE.HFIN
+BASE.DFIN
+BASE.DOSSIER
+BASE.USER
+BASE.ETAPE
+BASE.OPER
+BASE.TEMPS
+BASE.SUSPENDU
+BASE.OPENUM
+
+## Test si ETAPE = D    Debut
+## Test si ETAPE = F    Fin
+## Test si ETAPE = S    Suspend
+## Test si ETAPE = R    reprise
+## Test si ETAPE = A    Annul
+
+
+

@@ -1,0 +1,35 @@
+<AVANT>
+Ne pas oublier d'activer l'envs TEST avant
+
+Oui sinon utiliser avec python 2.7
+
+car il faurt en dependance
+
+twisted
+elixir
+
+possible yum install mais python2.6
+
+sinon easy_install pour python2.7
+    
+
+
+Tue Feb  4 10:14:38 CST 2014
+
+J'ai trouve des exemples pour une technique plus sur de client/server
+basé sur twisted
+
+cbtest          : ancien serveur code barre en perl 
+client_kivy     : client graphique 
+                  une version fonctionne a peu pres 
+clisrv_ex       : exemple de code avec protocole pour echange de fichiers 
+                  c'est l'exemple a suivre
+db              : a verifier sinon a virer
+Makefile        : permet de faire le menage
+notes           : des notes
+README          : ce fichier
+sess2           : Session version 2 => obsolete
+sess3           : Session version 3 => pour Scenario type clip
+session         : Version 1 : 
+srv             : le serveur
+srv_rpc         : serveur exemple (pour info)

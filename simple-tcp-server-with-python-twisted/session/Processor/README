@@ -1,0 +1,83 @@
+
+La gestion des sessions : 
+
+il est necessaire de batir
+un processeur simplifié avec
+
+LISTE D'instruction
+REGISTRE ETAT / VARIABLE
+POINTEUR DE PROGRAMME
+
+Exemple de process
+
+0 - Debut
+
+1 - LABEL DOSSIER
+2 - Affichage DOSSIER
+3 - Attente DATA
+4 - Verifier DATA - FILE DOSSIER 
+5 - SI FAUX LABEL => DOSSIER
+
+LABEL                       : Etiquette
+PRINT                       : Affichage
+READ                        : Lecture / Attente de donnee
+LOOK                        : Recherche valeur dans une table
+CHECK                       : Test de Valeur
+GOTO LABEL IF <TRUE|FALSE>  : Saut si Test Vrai ou Faux
+GOTO LABEL IF <TRUE|FALSE> MESSAGE <MESSAGE> Affichage d'un message
+WRITE BASE => Ecriture des valeurs dans la BDD
+
+CHAINE[DEBUT:FIN] Extraction de chaine
+
+Variable et type de variable
+
+
+Environnementale :
+TIME.NOW        Date et Heure
+DATE.NOW
+
+GLOBAL.<var>    Variable global a l'application
+SESSION.<var>   Variable de la session 
+
+contextuelle (un ensemble de multiple BASE)
+accessible en lecture
+
+DOSSIER         Variable pour le dossier complet (avec  toutes les operations)
+    DOSSIER.1.DDEB              Date de debut de la premiere operatoin
+    DOSSIER.OPER.SUSPENDU       Valeur de SUSPENDU de l'operation no OPER (valeur de OPER)
+
+Base de donnees
+BASE.<var>      Variable a Ecrire 
+
+OPERATOR => > < >= <= IN
+
+
+Cela permetrait de tester certain point avant 
+
+mercredi 9 mai 2012, 09:53:27 (UTC+0200)
+Par contre dans l'etat actuel des choses 
+pour la saisie et la verification de la saisie
+aucun pb 
+pour la validation et la verification des données 
+en plus de l'existence toute betes il est necessaire d'avoir un
+vrai langage de prog
+(Ex : verification sur l'enreg precedent, je verifie si je dois debuter
+que l'etape précedente soit terminee )
+
+
+
+dimanche 26 janvier 2014, 10:42:13 (UTC+0100)
+
+Autre technique :
+
+Pile d'instruction 
+
+DECLARATION
+	DOSSIER
+
+000 BEGIN
+001		LABEL / CONDITION / AFFICHE	/ ATTEND / VERIFIE / SI OK => (NEXT : Goto LABEL)  / SI pas OK GOTO LABEL
+002		$SAI_DOSSIER  : CURSOR=1 : No Dossier : DOSSIER : check_dossier : NEXT : GOTO $SAI_DOSSIER
+003		$SAI_OPERATION : Operation : USER(1-3)/OP(4)/POSTE(5-7) : check_operation : NEXT : GOTO $SAI_OPERATION
+099 END
+

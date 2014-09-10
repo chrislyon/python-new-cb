@@ -1,0 +1,18 @@
+
+# Programme exemple
+
+## Pour test des instructions 
+## PRINT LABEL LET
+
+PRINT "PREMIER PROGRAMME"
+LABEL SAISIE_DOSSIER
+LET VAR = "HELLO WORLD"
+PRINT VAR
+LET A=1
+LET B=2
+LET C=B+A
+PRINT A
+PRINT B
+PRINT C
+
+

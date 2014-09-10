@@ -1,0 +1,71 @@
+
+EN cours la gestion de session dans une liste
+il vaudrait mieux passer par un dico dont la cle transport.client (couple adr_ip port)
+
+Probleme : une cle qui soit un tuple genere plein d'effet de bord
+
+exemple : for k,v in sessions
+
+k,v contiennent les valeurs du tuple par le couple cle valeur
+
+il faudrait aussi une classe pour gerer les sessions
+
+=> Sessions
+
+create_session
+remove session
+kill une session
+kill toutes les sessions
+close toutes les sessions
+
+A partir de UserDict => Nickel
+
+
+Integration de la classe session (essai code a part)
+
+mais cela ne convient car je n'ai pas de boucle
+donc il faut que je declenche les choses 
+
+=> Connextion made => Init + recup du prompt
+=> Connection Lost => FIn
+
+a chaque ligne recu 
+    envoi dans session.reponse()
+    recuperation du message + affichage du message
+    recup du prompt()
+
+
+samedi 5 mai 2012, 12:43:58 (UTC+0200)
+
+Ya un debut
+cela tourne reste a peaufiner
+
+La structure est la 
+je ne sais si elle est adroite ou non
+mais elle fonctionne
+
+En gros tout le scenario de chaque client passe
+par la classes Sessions() qui contient le tableau de toute les sessions
+ce qui permet d'avoir quasiment un code generique dans le MyServer
+tout passe par Session() et Sessions()
+
+
+
+mercredi 10 octobre 2012, 17:54:05 (UTC+0200)
+
+Fiouuuu du temps a passe ...
+j'ai une classe Sessions qui regroupe TOUTES les sessions
+J'ai une classe de base Session qui represente le scenario
+que l'on peut instancier en Session_MP par exemple
+
+
+Mon Feb  3 10:44:38 CST 2014
+
+Cela ce precise 
+surtout que le projet va peut etre etre mis en exploitation
+mais avec des tablettes android => on va voir
+donc 2 type de sessions
+par defaut          => session telnet
+sinon session_JSON  => session avec echange de message JSON
+set SESSION JSON => a rajouter dans les commandes de bases (si possible)
+a voir dans Sessions => del + create ou remplacement 
