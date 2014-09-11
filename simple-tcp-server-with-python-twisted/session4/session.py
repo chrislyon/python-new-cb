@@ -6,7 +6,7 @@
 
 import os, sys, traceback
 import datetime
-import pdb
+import pudb
 
 ## -------------------------
 ## Exception / erreur
@@ -83,6 +83,7 @@ class Session(object):
 		self.ERR_DESC = ""		# Description de l'erreur
 		self.std_in = None		# Entree standard
 		self.std_out = None		# Sortie Standard
+		self.user_input = None
 
 		self.etape = 0
 
@@ -94,7 +95,7 @@ class Session(object):
 		try:
 			return l[self.ETAT-1]
 		except:
-			return "ETAT INCONNUE"
+			return "ETAT INCONNUE %s" % self.ETAT
 
 	def raz(self):
 		"""
@@ -103,6 +104,7 @@ class Session(object):
 		self.ETAT = ""
 		self.ERREUR = 0
 		self.ERR_DESC = ""
+		self.user_input = None
 		self.std_in = None
 		self.std_out = None
 		self.etape = 0
@@ -110,18 +112,17 @@ class Session(object):
 	def scenario(self):
 		raise Finished
 
-	def tick(self, data=None):
+	def tick(self):
 		"""
 			Boucle d'execution
 		"""
 		EXIT = False
-		user_input = data
 		while not EXIT:
 			self.ETAT = Session.RUNNING
 			try:
-				if user_input:
-					self.std_in = user_input
-					user_input = None
+				if self.user_input:
+					self.std_in = self.user_input
+					self.user_input = None
 				## On continue
 				self.scenario()
 			except Printing:
@@ -140,8 +141,10 @@ class Session(object):
 				traceback.print_exc(file=sys.stdout)
 				print "-"*60
 				EXIT = True
+			else:
+				pass
 
-			print "%s : Etape=%s ETAT=%s" % (self.name, self.etape, self.str_ETAT())
+		print "%s : Etape=%s ETAT=%s" % (self.name, self.etape, self.str_ETAT())
 
 ## --------------------------
 ## Exemple de classe de base
@@ -164,12 +167,14 @@ class MP(Session):
 			raise Waiting
 		elif self.etape == 3:
 			if self.std_in == 'QUIT':
-				self.etape = 4
+				self.etape = 5
 			else:
-				self.std_out = " TOTO "
+				self.std_out = "TEST DOSSIER %s " % self.std_in
 				self.etape = 0
 				raise Printing
 		elif self.etape == 4:
+			self.etape = 0
+		elif self.etape == 5:
 			print "Finished"
 			raise Finished
 
@@ -191,9 +196,10 @@ def test():
 		if s.ETAT == Session.WAITING:
 			print "WAITING"
 			r = raw_input('in= >')
-			s.tick(r)
+			s.user_input = r
 		elif s.ETAT == Session.PRINTING:
 			print "out=[%s]" % s.std_out
+			s.std_out = None
 		elif s.ETAT == Session.FINISHED:
 			print "FINISHED => ", s
 			EXIT = True
