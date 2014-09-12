@@ -8,6 +8,12 @@ import os, sys, traceback
 import datetime
 import pudb
 
+RUNNING = 1
+WAITING = 2
+PRINTING = 3
+FINISHED = 4
+STOPPED = 5
+
 ## -------------------------
 ## Exception / erreur
 ## -------------------------
@@ -70,11 +76,6 @@ class Finished(Exception):
 ## la classe de base session
 ## --------------------------
 class Session(object):
-	RUNNING = 1
-	WAITING = 2
-	PRINTING = 3
-	FINISHED = 4
-	STOPPED = 5
 
 	def __init__(self, name):
 		self.name = name
@@ -109,6 +110,7 @@ class Session(object):
 		self.std_out = None
 		self.etape = 0
 
+
 	def scenario(self):
 		raise Finished
 
@@ -118,7 +120,7 @@ class Session(object):
 		"""
 		EXIT = False
 		while not EXIT:
-			self.ETAT = Session.RUNNING
+			self.ETAT = RUNNING
 			try:
 				if self.user_input:
 					self.std_in = self.user_input
@@ -126,16 +128,16 @@ class Session(object):
 				## On continue
 				self.scenario()
 			except Printing:
-				self.ETAT = Session.PRINTING
+				self.ETAT = PRINTING
 				EXIT = True
 			except Waiting:
-				self.ETAT = Session.WAITING
+				self.ETAT = WAITING
 				EXIT = True
 			except Finished:
-				self.ETAT = Session.FINISHED
+				self.ETAT = FINISHED
 				EXIT = True
 			except:
-				self.ETAT = Session.STOPPED
+				self.ETAT = STOPPED
 				print "Erreur :"
 				print "-"*60
 				traceback.print_exc(file=sys.stdout)
@@ -145,6 +147,28 @@ class Session(object):
 				pass
 
 		#print "%s : Etape=%s ETAT=%s" % (self.name, self.etape, self.str_ETAT())
+
+	## --------------------------------
+	## Interface commune de sessions
+	## tick() en fait partie
+	## --------------------------------
+	def get_ETAT(self):
+		return self.ETAT
+
+	def set_INPUT(self, data):
+		self.user_input = data
+
+	def get_OUTPUT(self):
+		return self.std_out
+
+	def clear_OUTPUT(self):
+		self.std_out = None
+
+	def get_ERROR(self):
+		if self.ERREUR:
+			return "%s : %s" % (self.ERREUR, self.ERR_DESC)
+		else:
+			return None
 
 ## --------------------------
 ## Exemple de classe de base
@@ -192,18 +216,18 @@ def test():
 	log("debut Boucle principale")
 	while not EXIT:
 		s.tick()
-		if s.ETAT == Session.WAITING:
+		if s.get_ETAT() == WAITING:
 			print "WAITING"
 			r = raw_input('in= >')
-			s.user_input = r
-		elif s.ETAT == Session.PRINTING:
-			print "out=[%s]" % s.std_out
-			s.std_out = None
-		elif s.ETAT == Session.FINISHED:
+			s.set_INPUT(r)
+		elif s.get_ETAT() == PRINTING:
+			print "out=[%s]" % s.get_OUTPUT()
+			s.clear_OUTPUT()
+		elif s.get_ETAT() == FINISHED:
 			print "FINISHED => ", s
 			EXIT = True
-		elif s.ETAT == Session.STOPPED:
-			print "STOPPED => ", s
+		elif s.get_ETAT() == STOPPED:
+			print "STOPPED => ", s.get_ERROR()
 			EXIT = True
 		else:
 			print "Erreur ETAT inconnue"
