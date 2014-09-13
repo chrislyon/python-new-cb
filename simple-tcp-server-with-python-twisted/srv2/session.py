@@ -1,18 +1,26 @@
 
 
-##
-## QQ chose ne focntionne pas
-##
+## ---------------------------
+## Classe de session
+## Autrement dit le scenario
+## ---------------------------
 
 import os, sys, traceback
 import datetime
 import pudb
 
-RUNNING = 1
-WAITING = 2
-PRINTING = 3
-FINISHED = 4
-STOPPED = 5
+NB = 1
+RUNNING = NB
+NB+=1
+WAITING = NB
+NB+=1
+PRINTING = NB
+NB+=1
+ERR_VERIF = NB
+NB+=1
+FINISHED = NB
+NB+=1
+STOPPED = NB
 
 ## -------------------------
 ## Exception / erreur
@@ -49,6 +57,18 @@ class Waiting(Exception):
 
 	def __str__(self):
 		return "Waiting : %s " % self.raison
+
+class Err_Verif(Exception):
+	"""
+	Erreur sur verification des donnees
+	"""
+	def __init__(self, raison="<vide>", etape=0):
+		Exception.__init__(self, raison)
+		self.raison = raison
+		self.etape = etape
+
+	def __str__(self):
+		return "Err_Verif : %s " % self.raison
 
 class Stopped(Exception):
 	"""
@@ -92,7 +112,7 @@ class Session(object):
 		return "%s : Etat = %s / Err = %s / ErrDesc = %s " % (self.name, self.str_ETAT(), self.ERREUR, self.ERR_DESC)
 
 	def str_ETAT(self):
-		l = [ "RUNNING", "WAITING", "PRINTING", "FINISHED", "STOPPED" ]
+		l = [ "RUNNING", "WAITING", "PRINTING", "ERR_VERIF", "FINISHED", "STOPPED" ]
 		try:
 			return l[self.ETAT-1]
 		except:
@@ -133,6 +153,11 @@ class Session(object):
 			except Waiting:
 				self.ETAT = WAITING
 				EXIT = True
+			except Err_Verif as e:
+				self.ETAT = ERR_VERIF
+				self.ERREUR = e.etape
+				self.ERR_DESC = e.raison
+				EXIT = True
 			except Finished:
 				self.ETAT = FINISHED
 				EXIT = True
@@ -146,7 +171,7 @@ class Session(object):
 			else:
 				pass
 
-		#print "%s : Etape=%s ETAT=%s" % (self.name, self.etape, self.str_ETAT())
+		print "%s : Etape=%s ETAT=%s" % (self.name, self.etape, self.str_ETAT())
 
 	## --------------------------------
 	## Interface commune de sessions
@@ -179,27 +204,89 @@ class MP(Session):
 		 super(MP, self).__init__(name)
 
 	def scenario(self):
-		if self.etape == 0:
+		print "ENTREE", self.etape
+		INIT = 0
+		DOSSIER = 10
+		DOSS_VERIF = 15
+		OPERATION = 20
+		OP_VERIF = 25
+		VERIF_AVANT_MAJ = 80
+		MAJ_BASE = 90
+		if self.etape == INIT:
 			self.raz()
-			self.etape = 1
-		elif self.etape == 1:
+			self.etape = DOSSIER
+		elif self.etape == DOSSIER:
+			## Afichage
 			self.std_out = "Dossier : "
-			self.etape = 2
+			self.etape += 1
 			raise Printing
-		elif self.etape == 2:
-			self.etape = 3
+		elif self.etape == DOSSIER+1:
+			## Attente de saisie
+			self.etape = DOSS_VERIF
 			raise Waiting
-		elif self.etape == 3:
-			if self.std_in == 'QUIT':
-				self.etape = 5
+		elif self.etape == DOSS_VERIF:
+			## Verif du dossiers
+			DOSSIERS = ['1000', '1001', '1002', '1003']
+			if self.user_input in DOSSIERS:
+				self.etape = OPERATION
 			else:
-				self.std_out = "TEST DOSSIER %s " % self.std_in
-				self.etape = 0
-				raise Printing
-		elif self.etape == 4:
-			self.etape = 0
-		elif self.etape == 5:
+				R = "DOSSIER INCONNU %s " % self.user_input
+				E = self.etape
+				self.etape = DOSSIER
+				raise Err_Verif(raison=R, etape=E)
+		elif self.etape == OPERATION:
+			## Affichage
+			self.etape += 1
+			self.std_out = "Operation :"
+			raise Printing
+		elif self.etape == OPERATION+1:
+			## Attente de saisie
+			self.etape = OP_VERIF
+			raise Waiting
+		elif self.etape == OP_VERIF:
+			DATA = self.user_input
+			USERS = [ 'ONE', 'TWO' ]
+			ACTION = [ 'D', 'F', 'S' 'R' ]
+			POSTE = [ 'P01', 'P02', 'P03' ]
+			try:
+				U = DATA[:3]
+				A = DATA[3]
+				P = DATA[4:]
+			except:
+				R = "ERREUR FORMAT %s " % DATA
+				E = self.etape
+				self.etape = OPERATION
+				raise Err_Verif(raison=R, etape=E)
+			## Test USERS
+			if not U in USERS:
+				R = "USER INCONNU %s " % DATA
+				E = self.etape
+				self.etape = OPERATION
+				raise Err_Verif(raison=R, etape=E)
+			## Test ACTION
+			if not A in ACTION:
+				R = "ACTION INCONNUE %s " % DATA
+				E = self.etape
+				self.etape = OPERATION
+				raise Err_Verif(raison=R, etape=E)
+			## Test POSTE
+			if not P in POSTE:
+				R = "POSTE INCONNUE %s " % DATA
+				E = self.etape
+				self.etape = OPERATION
+				raise Err_Verif(raison=R, etape=E)
+			## sinon 
+			self.etape = VERIF_AVANT_MAJ
+		elif self.etape == VERIF_AVANT_MAJ:
+			self.etape = MAJ_BASE
+		elif self.etape == MAJ_BASE:
+			## Ecriture base de donnees
+			self.std_out = "MISE A JOUR BASE OK"
+			self.etape = INIT
+			raise Printing
+		elif self.etape == 99:
 			raise Finished
+		print "SORTIE", self.etape
 
 ## ------------------------
 ## Petite routine de log
@@ -214,6 +301,7 @@ def test():
 	print s
 	EXIT = False
 	log("debut Boucle principale")
+	#pudb.set_trace()
 	while not EXIT:
 		s.tick()
 		if s.get_ETAT() == WAITING:
@@ -223,12 +311,14 @@ def test():
 		elif s.get_ETAT() == PRINTING:
 			print "out=[%s]" % s.get_OUTPUT()
 			s.clear_OUTPUT()
+		elif s.get_ETAT() == ERR_VERIF:
+			print "ERREUR => Etape : %s / %s " % (s.ERREUR, s.ERR_DESC)
 		elif s.get_ETAT() == FINISHED:
 			print "FINISHED => ", s
 			EXIT = True
 		elif s.get_ETAT() == STOPPED:
+			## Une erreur 
 			print "STOPPED => ", s.get_ERROR()
-			EXIT = True
 		else:
 			print "Erreur ETAT inconnue"
 			EXIT = True
