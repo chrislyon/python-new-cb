@@ -1,0 +1,28 @@
+CREATE TABLE `XHISTOCB` (
+  `CHRONO` int(11) NOT NULL default '0',
+  `DATDEB` date NOT NULL default '0000-00-00',
+  `DATFIN` date NOT NULL default '0000-00-00',
+  `DATCRE` date NOT NULL default '0000-00-00',
+  `DATRECUP` date NOT NULL default '0000-00-00',
+  `ETAPE` int(11) NOT NULL default '0',
+  `HDEB` varchar(8) NOT NULL default '',
+  `HFIN` varchar(8) NOT NULL default '',
+  `NDOUCHE` int(11) NOT NULL default '0',
+  `OPENUM` int(11) NOT NULL default '0',
+  `SUSPENDU` int(11) NOT NULL default '0',
+  `TEMPS` int(11) NOT NULL default '0',
+  `XDCNUM` varchar(8) NOT NULL default '',
+  `XUSRCB` char(3) NOT NULL default '',
+  `XWSTCB` varchar(4) NOT NULL default '',
+  `BANQUE` varchar(5) NOT NULL default '',
+  `QTE` int(11) NOT NULL default '0',
+  `NBFOLIO` int(11) NOT NULL default '0',
+  `MACHINE` varchar(10) NOT NULL default '',
+  `NUMBO1` varchar(8) NOT NULL default '',
+  `NUMBO2` varchar(8) NOT NULL default '',
+  `NUMBO3` varchar(8) NOT NULL default '',
+  `NUMBO4` varchar(8) NOT NULL default '',
+  `NUMBO5` varchar(8) NOT NULL default '',
+  UNIQUE KEY `CLE1` (`XDCNUM`,`OPENUM`)
+) TYPE=MyISAM;
+
