@@ -44,3 +44,13 @@ sauf que il faut envoyer des RETURN 2 fois / lignes
 samedi 13 septembre 2014, 20:19:09 (UTC+0200)
 
 j'ai qq chose qui marche reste a debugger
+
+mardi 16 septembre 2014, 17:46:22 (UTC+0200)
+
+En fait non, cela ne convient pas :
+
+- je dois saisir qq chose avant de commencer
+- apres j'ai un decalage entre l'attente et l'envoi de donnees
+- il faut une etape pour verifier la donnees si elle est conforme on continue
+- il faut un etat WAITING mais qui le reste si jamais la donnees n'est pas valide
+

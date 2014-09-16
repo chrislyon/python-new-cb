@@ -85,32 +85,32 @@ class MyServer(LineReceiver):
                 ## On joue le scenario de la classe Session
 				## Ici on envoie la reponse
 				#self.factory.cnx.set_reponse(self, line)
-
-				EXIT = False
-				while not EXIT:
-					self.factory.cnx.tick(self)
-					ETAT = self.factory.cnx.get_ETAT(self)
-					if ETAT == S.WAITING:
-						self.factory.cnx.set_INPUT(self,line)
-						EXIT = True
-					elif ETAT == S.PRINTING:
-						rep = self.factory.cnx.get_OUTPUT(self)
-						self.log(rep)
-						self.sendLine(">%s " % rep)
-						self.factory.cnx.clear_OUTPUT(self)
-					elif ETAT == S.ERR_VERIF:
-						E = self.factory.cnx.get_ERROR(self)
-						self.log( "ERREUR => %s " % E )
-						self.sendLine(" ERREUR %s " % E)
-					elif ETAT == S.FINISHED:
-						self.log( "FINISHED " )
-						EXIT = True
-					elif ETAT == S.STOPPED:
-						self.log( "STOPPED => %s " % self.factory.cnx.get_ERROR(self) )
-						EXIT = True
-					else:
-						self.log( "Erreur ETAT inconnue" )
-						EXIT = True
+				if line.strip():
+					EXIT = False
+					while not EXIT:
+						self.factory.cnx.tick(self)
+						ETAT = self.factory.cnx.get_ETAT(self)
+						if ETAT == S.WAITING:
+							self.factory.cnx.set_INPUT(self,line)
+							EXIT = True
+						elif ETAT == S.PRINTING:
+							rep = self.factory.cnx.get_OUTPUT(self)
+							self.log(rep)
+							self.sendLine(">%s " % rep)
+							self.factory.cnx.clear_OUTPUT(self)
+						elif ETAT == S.ERR_VERIF:
+							E = self.factory.cnx.get_ERROR(self)
+							self.log( "ERREUR => %s " % E )
+							self.sendLine(" ERREUR %s " % E)
+						elif ETAT == S.FINISHED:
+							self.log( "FINISHED " )
+							EXIT = True
+						elif ETAT == S.STOPPED:
+							self.log( "STOPPED => %s " % self.factory.cnx.get_ERROR(self) )
+							EXIT = True
+						else:
+							self.log( "Erreur ETAT inconnue" )
+							EXIT = True
 
 
     ## -----------------

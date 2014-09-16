@@ -171,7 +171,7 @@ class Session(object):
 			else:
 				pass
 
-		print "%s : Etape=%s ETAT=%s" % (self.name, self.etape, self.str_ETAT())
+		#print "%s : Etape=%s ETAT=%s" % (self.name, self.etape, self.str_ETAT())
 
 	## --------------------------------
 	## Interface commune de sessions
@@ -227,10 +227,11 @@ class MP(Session):
 		elif self.etape == DOSS_VERIF:
 			## Verif du dossiers
 			DOSSIERS = ['1000', '1001', '1002', '1003']
-			if self.user_input in DOSSIERS:
+			print "verif Dossiers [%s] - %s" % ( self.std_in, DOSSIERS)
+			if self.std_in in DOSSIERS:
 				self.etape = OPERATION
 			else:
-				R = "DOSSIER INCONNU %s " % self.user_input
+				R = "DOSSIER INCONNU %s " % self.std_in
 				E = self.etape
 				self.etape = DOSSIER
 				raise Err_Verif(raison=R, etape=E)
@@ -244,7 +245,7 @@ class MP(Session):
 			self.etape = OP_VERIF
 			raise Waiting
 		elif self.etape == OP_VERIF:
-			DATA = self.user_input
+			DATA = self.std_in
 			USERS = [ 'ONE', 'TWO' ]
 			ACTION = [ 'D', 'F', 'S' 'R' ]
 			POSTE = [ 'P01', 'P02', 'P03' ]
